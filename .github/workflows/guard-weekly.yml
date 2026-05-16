@@ -1,0 +1,28 @@
+name: Weekly Guard Scan
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  guard-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure Takumi Guard
+        run: |
+          npm config set registry https://npm.flatt.tech/
+          if [ -n "${{ secrets.SHISHO_TOKEN }}" ]; then
+            npm config set //npm.flatt.tech/:_authToken "${{ secrets.SHISHO_TOKEN }}"
+          fi
+
+      - name: Verify package blocking
+        run: |
+          npm install @panda-guard/test-malicious 2>&1 | grep -qiE '403|Forbidden|blocked' || \
+            (echo "Expected block" && exit 1)

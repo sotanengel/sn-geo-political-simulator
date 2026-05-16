@@ -1,0 +1,17 @@
+game:
+  num_nations: 10
+  max_turns: 50
+  h3_resolution: 3
+  turn_timeout_seconds: 30
+
+resources:
+  initial_range:
+    min: 100
+    max: 300
+  max_trades_per_turn: 5
+
+military:
+  unit_production_cost_ore: 10
+  unit_maintenance_food: 1
+  unit_maintenance_fuel: 1
+  tech_scale_factor: 0.1

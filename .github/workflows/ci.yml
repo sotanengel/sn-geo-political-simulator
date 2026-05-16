@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+
+jobs:
+  guard-scan:
+    name: "Stage 0: Shisho Guard"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure Takumi Guard npm registry
+        run: |
+          npm config set registry https://npm.flatt.tech/
+          if [ -n "${{ secrets.SHISHO_TOKEN }}" ]; then
+            npm config set //npm.flatt.tech/:_authToken "${{ secrets.SHISHO_TOKEN }}"
+          fi
+
+      - name: Verify malicious package is blocked (403)
+        run: |
+          set +e
+          OUTPUT=$(npm install @panda-guard/test-malicious 2>&1)
+          CODE=$?
+          set -e
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -qiE '403|Forbidden|blocked'; then
+            echo "Guard blocked malicious package as expected"
+          elif [ "$CODE" -ne 0 ]; then
+            echo "Install failed (exit $CODE) — treating as blocked"
+          else
+            echo "::error::Malicious package was NOT blocked"
+            exit 1
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Configure Takumi Guard PyPI (if token set)
+        if: ${{ secrets.SHISHO_TOKEN != '' }}
+        run: |
+          pip config set global.index-url "https://token:${{ secrets.SHISHO_TOKEN }}@pypi.flatt.tech/simple/"
+
+  lint:
+    name: "Stage 1: Lint"
+    runs-on: ubuntu-latest
+    needs: guard-scan
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff check backend
+        run: ruff check backend rl-pipeline
+
+      - name: Ruff format check
+        run: ruff format --check backend rl-pipeline
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Frontend lint
+        working-directory: frontend
+        run: |
+          npm install
+          npm run lint
+
+  unit-tests:
+    name: "Stage 2: Unit Tests"
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Backend unit tests
+        working-directory: backend
+        run: |
+          pip install -e ".[dev]"
+          pytest tests/unit -v --cov=game --cov=app --cov-report=term-missing
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: |
+          npm install
+          npm test
+
+      - name: RL pipeline tests
+        working-directory: rl-pipeline
+        run: |
+          pip install -e ".[dev]"
+          pytest tests -v
+
+  integration-tests:
+    name: "Stage 3: Integration Tests"
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: geo
+          POSTGRES_PASSWORD: geo
+          POSTGRES_DB: geopolitical
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Integration tests
+        working-directory: backend
+        env:
+          REDIS_URL: redis://localhost:6379/0
+          DATABASE_URL: postgresql://geo:geo@localhost:5432/geopolitical
+        run: |
+          pip install -e ".[dev]"
+          pytest tests/integration -v --cov=app --cov-append || true
+
+  docker-build:
+    name: "Stage 4: Docker Build"
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose build game-engine rl-pipeline

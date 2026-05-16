@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+backend/.venv/
+rl-pipeline/.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+out/
+coverage/
+.pnpm-store/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Data & checkpoints
+backend/game/data/*.parquet
+backend/game/data/*.npz
+checkpoints/
+*.pt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
