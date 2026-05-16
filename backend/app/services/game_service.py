@@ -7,12 +7,14 @@ from typing import Any
 
 import numpy as np
 
+from app.map_encoding import build_map_cells, build_observation_payload
 from app.schemas import (
     ActionRequest,
     CreateGameRequest,
     GameConfigSchema,
     GameStateResponse,
     GameSummary,
+    MapCell,
     NationView,
     ResourceDict,
 )
@@ -20,6 +22,7 @@ from app.stores.protocol import GameStore
 from game.turn.processor import TurnProcessor
 from game.types import (
     ActionType,
+    ControllerType,
     GameAction,
     ResourceType,
     TradeOffer,
@@ -45,6 +48,7 @@ class GameService:
         game_id = str(uuid.uuid4())
         cfg = _to_game_config(request.config, request.seed)
         state = self._env.reset(cfg)
+        _apply_controllers(state, request.config.controllers)
 
         extra = {
             "submitted": {},
@@ -116,17 +120,11 @@ class GameService:
         loaded = await self._store.load_state(game_id)
         if not loaded:
             return None
-        state, _ = loaded
-        nation = state.nations.get(nation_id)
-        if not nation:
+        state, extra = loaded
+        if nation_id not in state.nations:
             return None
-        return {
-            "own_resources": nation.resources.to_dict(),
-            "own_category": nation.category.value,
-            "turn": state.turn,
-            "territory_size": len(nation.territory),
-            "num_nations": len(state.nations),
-        }
+        submitted = set(extra.get("submitted", {}).keys())
+        return build_observation_payload(state, nation_id, submitted=submitted)
 
     def subscribe(self, game_id: str) -> asyncio.Queue[dict[str, Any]]:
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
@@ -292,6 +290,10 @@ def _state_to_response(game_id: str, state: WorldState, extra: dict[str, Any]) -
         )
         for n in state.nations.values()
     ]
+    cells = [
+        MapCell(h3=c["h3"], owner_id=c["owner_id"], terrain=c["terrain"])
+        for c in build_map_cells(state)
+    ]
     return GameStateResponse(
         game_id=game_id,
         turn=state.turn,
@@ -300,4 +302,11 @@ def _state_to_response(game_id: str, state: WorldState, extra: dict[str, Any]) -
         winners=state.winners,
         nations=nations,
         pending_actions={nid: nid not in submitted for nid in state.nations},
+        cells=cells,
     )
+
+
+def _apply_controllers(state: WorldState, controllers: dict[str, str]) -> None:
+    for nation_id, controller_name in controllers.items():
+        if nation_id in state.nations:
+            state.nations[nation_id].controller = ControllerType(controller_name)

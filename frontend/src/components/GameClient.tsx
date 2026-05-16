@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
-import { createGame, fetchGameState, submitPass } from "@/lib/api";
+import { createGame, fetchGameState, submitAction, submitPass } from "@/lib/api";
+import type { ActionPayload } from "@/lib/api";
 import { useSSE } from "@/hooks/useSSE";
 import { useGameStore } from "@/store/gameStore";
 import Dashboard from "@/components/Dashboard";
@@ -25,12 +26,12 @@ export default function GameClient() {
   const startGame = useCallback(async () => {
     setLoading(true);
     try {
-      const { game_id } = await createGame(6, Date.now());
+      const { game_id } = await createGame(6, Date.now(), 2);
       const state = await fetchGameState(game_id);
       setGameId(game_id);
       setGameState(state);
       setSelectedNation(state.nations[0]?.id ?? null);
-      appendLog(`Game ${game_id} started`);
+      appendLog(`Game ${game_id} started (${state.cells.length} cells)`);
     } catch (e) {
       appendLog(`Error: ${e}`);
     } finally {
@@ -49,6 +50,23 @@ export default function GameClient() {
     }
   }, [gameId, selectedNationId, setGameState, appendLog]);
 
+  const handleAction = useCallback(
+    async (action: Omit<ActionPayload, "nation_id">) => {
+      if (!gameId || !selectedNationId) return;
+      try {
+        const state = await submitAction(gameId, {
+          nation_id: selectedNationId,
+          ...action,
+        });
+        setGameState(state);
+        appendLog(`${selectedNationId} → ${action.action_type}`);
+      } catch (e) {
+        appendLog(`Action error: ${e}`);
+      }
+    },
+    [gameId, selectedNationId, setGameState, appendLog]
+  );
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <header className="flex items-center justify-between">
@@ -66,15 +84,20 @@ export default function GameClient() {
       {gameState && (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <GlobeMap nations={gameState.nations} />
+            <GlobeMap nations={gameState.nations} cells={gameState.cells} />
           </div>
           <Dashboard
             nations={gameState.nations}
+            cells={gameState.cells}
             selectedNationId={selectedNationId}
             onSelectNation={setSelectedNation}
             onPass={handlePass}
+            onAction={handleAction}
             turn={gameState.turn}
             maxTurns={gameState.max_turns}
+            gameOver={gameState.game_over}
+            winners={gameState.winners}
+            pendingActions={gameState.pending_actions}
           />
         </div>
       )}

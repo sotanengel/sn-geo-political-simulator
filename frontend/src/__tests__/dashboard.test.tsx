@@ -18,11 +18,16 @@ describe("Dashboard", () => {
     render(
       <Dashboard
         nations={nations}
+        cells={[]}
         selectedNationId="nation_0"
         onSelectNation={() => {}}
         onPass={() => {}}
+        onAction={() => {}}
         turn={1}
         maxTurns={50}
+        gameOver={false}
+        winners={[]}
+        pendingActions={{ nation_0: true }}
       />
     );
     expect(screen.getByText(/ターン 1/)).toBeInTheDocument();

@@ -48,6 +48,12 @@ class GameSummary(BaseModel):
     num_nations: int
 
 
+class MapCell(BaseModel):
+    h3: str
+    owner_id: str | None = None
+    terrain: str
+
+
 class NationView(BaseModel):
     id: str
     name: str
@@ -66,3 +72,4 @@ class GameStateResponse(BaseModel):
     winners: list[str]
     nations: list[NationView]
     pending_actions: dict[str, bool]
+    cells: list[MapCell] = Field(default_factory=list)

@@ -69,6 +69,30 @@ def test_config_validate(client: TestClient) -> None:
     assert resp.json()["valid"] is True
 
 
+def test_state_includes_map_cells(client: TestClient) -> None:
+    create = client.post(
+        "/api/v1/games",
+        json={"config": {"num_nations": 2, "h3_resolution": 1}, "seed": 7},
+    )
+    game_id = create.json()["game_id"]
+    state = client.get(f"/api/v1/games/{game_id}/state").json()
+    assert len(state["cells"]) > 0
+    assert "h3" in state["cells"][0]
+    assert "terrain" in state["cells"][0]
+
+
+def test_observation_includes_map_matrix(client: TestClient) -> None:
+    create = client.post(
+        "/api/v1/games",
+        json={"config": {"num_nations": 2, "h3_resolution": 1}, "seed": 8},
+    )
+    game_id = create.json()["game_id"]
+    obs = client.get(f"/api/v1/games/{game_id}/observation/nation_0").json()
+    assert len(obs["map"]) == 64
+    assert len(obs["map"][0]) == 8
+    assert len(obs["nation_resources"]) == 16
+
+
 def test_observation_endpoint(client: TestClient) -> None:
     create = client.post(
         "/api/v1/games",
