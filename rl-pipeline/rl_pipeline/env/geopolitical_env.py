@@ -101,10 +101,16 @@ class GeopoliticalEnv(Env):
             dtype=np.float32,
         )
         category = 0 if data.get("own_category") == "ISLAND" else 1
+        map_data = np.array(data.get("map", []), dtype=np.float32)
+        if map_data.shape != (64, 8):
+            map_data = np.zeros((64, 8), dtype=np.float32)
+        nation_res = np.array(data.get("nation_resources", []), dtype=np.float32)
+        if nation_res.shape != (16, 5):
+            nation_res = np.zeros((16, 5), dtype=np.float32)
         return {
-            "map": np.zeros((64, 8), dtype=np.float32),
+            "map": map_data,
             "own_resources": own_res,
-            "nation_resources": np.zeros((16, 5), dtype=np.float32),
+            "nation_resources": nation_res,
             "own_category": np.int64(category),
             "turn": np.array([data.get("turn", 0)], dtype=np.int32),
         }
