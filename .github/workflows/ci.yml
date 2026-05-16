@@ -116,7 +116,7 @@ jobs:
         working-directory: rl-pipeline
         run: |
           pip install -e ".[dev]"
-          pytest tests -v
+          pytest tests -v --cov=rl_pipeline --cov-fail-under=70
 
   integration-tests:
     name: "Stage 3: Integration Tests"
