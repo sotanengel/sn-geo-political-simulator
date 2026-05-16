@@ -1,4 +1,11 @@
+import logging
+
 from fastapi import FastAPI
+
+from app.logging_config import configure_json_logging
+
+configure_json_logging()
+logger = logging.getLogger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from starlette.responses import Response
@@ -6,6 +13,7 @@ from starlette.responses import Response
 from app.api.v1 import games, config as config_api
 
 app = FastAPI(title="Geo-Political Simulator", version="0.1.0")
+logger.info("game_engine_started")
 
 app.add_middleware(
     CORSMiddleware,
