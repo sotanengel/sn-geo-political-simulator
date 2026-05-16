@@ -1,0 +1,12 @@
+policies:
+  - id: no-critical-cve
+    description: "CVSSスコア 9.0以上のCVEをブロック"
+    severity: critical
+    action: block
+  - id: no-high-cve
+    description: "CVSSスコア 7.0以上のCVEを警告"
+    severity: high
+    action: warn
+  - id: base-image-check
+    description: "ベースイメージは公式イメージのみ許可"
+    action: block

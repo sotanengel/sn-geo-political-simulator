@@ -1,0 +1,7 @@
+victory_condition: largest_territory
+
+# Presets:
+# largest_territory, smallest_territory, balance_enforcer,
+# target_score (target_cells), survival, custom (module/function)
+
+target_cells: 500

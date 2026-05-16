@@ -1,0 +1,33 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=1000"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(backend|rl-pipeline)/
+      - id: ruff-format
+        files: ^(backend|rl-pipeline)/
+
+  - repo: local
+    hooks:
+      - id: pytest-backend-unit
+        name: pytest backend unit
+        entry: bash -c 'cd backend && python -m pytest tests/unit -q'
+        language: system
+        pass_filenames: false
+        files: ^backend/
+      - id: pytest-rl
+        name: pytest rl-pipeline
+        entry: bash -c 'cd rl-pipeline && python -m pytest tests -q'
+        language: system
+        pass_filenames: false
+        files: ^rl-pipeline/
