@@ -65,6 +65,24 @@ config/        # Game & victory presets
 docs/          # Requirements epic body
 ```
 
+## 性能ベンチマーク
+
+```bash
+cd backend && python ../scripts/benchmark_turn.py
+```
+
+## 本番（AWS）
+
+[Cognito メール認証方針](docs/aws-production.md) を参照。
+
+## Ray RLlib（マルチエージェント）
+
+```bash
+cd rl-pipeline
+python train_rllib.py --num-nations 8
+# pip install 'ray[rllib]' でフルトレーニング可能
+```
+
 ## ライセンス
 
 Apache License 2.0 — see [LICENSE](LICENSE).

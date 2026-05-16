@@ -6,13 +6,13 @@
 
 ## 実装フェーズ
 
-- [ ] Phase 0: 基盤（Guard / CI / pre-commit / Docker骨格）
-- [ ] Phase 1: ゲームコア（H3・地形・国家・ターン）
-- [ ] Phase 2: FastAPI + Redis/Postgres + SSE
-- [ ] Phase 3: Three.js フロントエンド
-- [ ] Phase 4: SB3 RL パイプライン
-- [ ] Phase 5: Ray RLlib マルチエージェント（後続）
-- [ ] Phase 6: 可観測性・性能・本番向け強化
+- [x] Phase 0: 基盤（Guard / CI / pre-commit / Docker骨格）
+- [x] Phase 1: ゲームコア（H3・地形・国家・ターン）
+- [x] Phase 2: FastAPI + Redis/Postgres + SSE
+- [x] Phase 3: Three.js フロントエンド
+- [x] Phase 4: SB3 RL パイプライン
+- [x] Phase 5: Ray RLlib マルチエージェント（後続）
+- [x] Phase 6: 可観測性・性能・本番向け強化
 
 ---
 
