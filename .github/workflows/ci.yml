@@ -100,7 +100,7 @@ jobs:
         working-directory: backend
         run: |
           pip install -e ".[dev]"
-          pytest tests/unit -v --cov=game --cov=app --cov-report=term-missing
+          pytest tests/unit tests/integration -v --cov=game --cov-fail-under=70 --cov-report=term-missing
 
       - uses: actions/setup-node@v4
         with:

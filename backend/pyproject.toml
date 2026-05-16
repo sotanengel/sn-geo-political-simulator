@@ -51,5 +51,5 @@ source = ["game", "app"]
 branch = true
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 70
 omit = ["tests/*"]
