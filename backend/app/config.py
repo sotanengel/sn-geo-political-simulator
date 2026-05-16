@@ -6,7 +6,7 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://localhost:6379/0"
     database_url: str = "postgresql://geo:geo@localhost:5432/geopolitical"
-    use_memory_store: bool = True
+    use_memory_store: bool = False
 
 
 settings = Settings()

@@ -98,9 +98,11 @@ jobs:
 
       - name: Backend unit tests
         working-directory: backend
+        env:
+          USE_MEMORY_STORE: "true"
         run: |
           pip install -e ".[dev]"
-          pytest tests/unit tests/integration -v --cov=game --cov-fail-under=70 --cov-report=term-missing
+          pytest tests/unit -v --cov=game --cov=app --cov-fail-under=70 --cov-report=term-missing
 
       - uses: actions/setup-node@v4
         with:
@@ -145,11 +147,12 @@ jobs:
       - name: Integration tests
         working-directory: backend
         env:
+          USE_MEMORY_STORE: "false"
           REDIS_URL: redis://localhost:6379/0
           DATABASE_URL: postgresql://geo:geo@localhost:5432/geopolitical
         run: |
           pip install -e ".[dev]"
-          pytest tests/integration -v --cov=app --cov-append || true
+          pytest tests/integration -v --cov=app --cov-fail-under=80 --cov-report=term-missing
 
   docker-build:
     name: "Stage 4: Docker Build"

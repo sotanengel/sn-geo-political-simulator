@@ -13,12 +13,13 @@ cd backend && pip install -e ".[dev]"
 cd ../frontend && npm install
 cd ../rl-pipeline && pip install -e ".[dev]"
 
-# テスト
-cd backend && pytest tests/unit -v
+# テスト（単体: メモリストア / 統合: Redis + Postgres が必要）
+cd backend && USE_MEMORY_STORE=true pytest tests/unit -v
+cd backend && USE_MEMORY_STORE=false pytest tests/integration -v  #要 redis+postgres
 cd ../frontend && npm test
 cd ../rl-pipeline && pytest tests -v
 
-# Docker Compose
+# Docker Compose（Redis + Postgres でゲーム状態を永続化）
 docker compose up --build
 ```
 
@@ -54,6 +55,17 @@ pip install pre-commit
 pre-commit install
 pre-commit run --all-files
 ```
+
+## API・永続化（Phase 2）
+
+| 環境変数 | 説明 |
+|----------|------|
+| `USE_MEMORY_STORE` | `true` でインメモリ（単体テスト）、`false` で Redis + Postgres（Docker 本番） |
+| `REDIS_URL` | ゲーム状態（例: `redis://localhost:6379/0`） |
+| `DATABASE_URL` | ターン履歴（例: `postgresql://geo:geo@localhost:5432/geopolitical`） |
+
+- ターンタイムアウト: `turn_timeout_seconds`（未提出国は自動 `PASS`）
+- SSE: `GET /api/v1/games/{game_id}/events`
 
 ## プロジェクト構成
 

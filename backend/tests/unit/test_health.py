@@ -1,3 +1,7 @@
+import os
+
+os.environ["USE_MEMORY_STORE"] = "true"
+
 from fastapi.testclient import TestClient
 
 from app.main import app

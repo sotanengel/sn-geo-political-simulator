@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+from game.types import WorldState
+
+
+class GameStore(Protocol):
+    async def save_state(self, game_id: str, state: WorldState, extra: dict[str, Any]) -> None: ...
+
+    async def load_state(self, game_id: str) -> tuple[WorldState, dict[str, Any]] | None: ...
+
+    async def delete_game(self, game_id: str) -> None: ...
+
+    async def game_exists(self, game_id: str) -> bool: ...
+
+    async def append_history(self, game_id: str, record: dict[str, Any]) -> None: ...
+
+    async def get_history(self, game_id: str) -> list[dict[str, Any]]: ...
