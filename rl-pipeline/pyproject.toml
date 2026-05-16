@@ -23,3 +23,10 @@ packages = ["rl_pipeline"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["rl_pipeline"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 70
