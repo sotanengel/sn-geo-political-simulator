@@ -30,6 +30,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      USE_MEMORY_STORE: "false"
       REDIS_URL: redis://redis:6379/0
       DATABASE_URL: postgresql://geo:geo@postgres:5432/geopolitical
     depends_on:

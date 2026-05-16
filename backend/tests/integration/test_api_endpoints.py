@@ -1,11 +1,16 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+
+@pytest.fixture
+def client() -> TestClient:
+    with TestClient(app) as test_client:
+        yield test_client
 
 
-def test_create_and_get_game() -> None:
+def test_create_and_get_game(client: TestClient) -> None:
     create = client.post(
         "/api/v1/games",
         json={"config": {"num_nations": 3, "max_turns": 5, "h3_resolution": 1}, "seed": 1},
@@ -15,11 +20,10 @@ def test_create_and_get_game() -> None:
 
     get_resp = client.get(f"/api/v1/games/{game_id}")
     assert get_resp.status_code == 200
-    data = get_resp.json()
-    assert len(data["nations"]) == 3
+    assert len(get_resp.json()["nations"]) == 3
 
 
-def test_submit_pass_action() -> None:
+def test_submit_pass_action(client: TestClient) -> None:
     create = client.post(
         "/api/v1/games",
         json={"config": {"num_nations": 2, "max_turns": 3, "h3_resolution": 1}, "seed": 2},
@@ -33,11 +37,30 @@ def test_submit_pass_action() -> None:
         )
         assert resp.status_code == 200
 
-    state = client.get(f"/api/v1/games/{game_id}/state").json()
-    assert state["turn"] >= 1
+    state = client.get(f"/api/v1/games/{game_id}/state")
+    assert state.json()["turn"] >= 1
 
 
-def test_config_validate() -> None:
+def test_history_persisted(client: TestClient) -> None:
+    create = client.post(
+        "/api/v1/games",
+        json={"config": {"num_nations": 2, "h3_resolution": 1}, "seed": 5},
+    )
+    game_id = create.json()["game_id"]
+    history = client.get(f"/api/v1/games/{game_id}/history")
+    assert history.status_code == 200
+    events = [h["event"] for h in history.json()]
+    assert "game_created" in events
+
+
+def test_history_404_unknown_game(client: TestClient) -> None:
+    resp = client.get(
+        "/api/v1/games/00000000-0000-0000-0000-000000000099/history"
+    )
+    assert resp.status_code == 404
+
+
+def test_config_validate(client: TestClient) -> None:
     resp = client.post(
         "/api/v1/config/validate",
         json={"config": {"num_nations": 8, "h3_resolution": 3}},
@@ -46,7 +69,7 @@ def test_config_validate() -> None:
     assert resp.json()["valid"] is True
 
 
-def test_observation_endpoint() -> None:
+def test_observation_endpoint(client: TestClient) -> None:
     create = client.post(
         "/api/v1/games",
         json={"config": {"num_nations": 2, "h3_resolution": 1}, "seed": 3},
@@ -57,8 +80,9 @@ def test_observation_endpoint() -> None:
     assert "own_resources" in obs.json()
 
 
-def test_delete_game() -> None:
+def test_delete_game(client: TestClient) -> None:
     create = client.post("/api/v1/games", json={})
     game_id = create.json()["game_id"]
     assert client.delete(f"/api/v1/games/{game_id}").status_code == 200
     assert client.get(f"/api/v1/games/{game_id}").status_code == 404
+    assert client.get(f"/api/v1/games/{game_id}/history").status_code == 404
